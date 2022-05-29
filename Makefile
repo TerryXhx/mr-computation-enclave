@@ -30,6 +30,7 @@
 #
 
 ######## SGX SDK Settings ########
+include buildenv.mk
 
 SGX_SDK ?= /opt/intel/sgxsdk
 SGX_MODE ?= HW
@@ -84,7 +85,7 @@ else
 endif
 
 App_Cpp_Files := App/App.cpp App/ErrorSupport.cpp $(wildcard App/Edger8rSyntax/*.cpp) $(wildcard App/TrustedLibrary/*.cpp)
-App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include
+App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I$(INCLUDE_DIR)/internal
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 
@@ -149,7 +150,8 @@ Enclave_Link_Flags := $(MITIGATION_LDFLAGS) $(Enclave_Security_Link_Flags) \
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections   \
-	-Wl,--version-script=Enclave/Enclave.lds
+	-Wl,--version-script=Enclave/Enclave.lds	   \
+	-L$(ROOT_DIR2)/urts/parser -lenclaveparser
 
 Enclave_Cpp_Objects := $(sort $(Enclave_Cpp_Files:.cpp=.o))
 

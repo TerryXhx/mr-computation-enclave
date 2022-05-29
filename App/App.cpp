@@ -44,6 +44,9 @@
 
 #include "ErrorSupport.h"
 
+#include "se_map.h"
+#include "user_types.h"
+
 /* Global EID shared by multiple threads */
 sgx_enclave_id_t global_eid = 0;
 
@@ -74,6 +77,48 @@ void ocall_print_string(const char *str)
     printf("%s", str);
 }
 
+int ocall_open_file(const char *filepath)
+{
+    FILE* fp = fopen(filepath, "rb");
+    if (fp == NULL)
+        return THE_INVALID_HANDLE;
+    return fileno(fp);
+}
+
+void ocall_close_handle(int fd)
+{
+    close(fd);
+}
+
+uint8_t* ocall_map_file(int fd, size_t *size)
+{
+    struct stat st;
+    memset(&st, 0, sizeof(st));
+    if (-1 == fstat(fd, &st))
+        return NULL;
+    
+    map_handle_t *mh = (map_handle_t*)calloc(1, sizeof(map_handle_t));
+    if (mh == NULL)
+        return NULL;
+    
+    mh->base_addr = (uint8_t *)mmap(
+        NULL, (size_t)st.st_size, 
+        PROT_READ | PROT_WRITE, MAP_PRIVATE, 
+        fd, 0
+    );
+    if (MAP_FAILED == mh->base_addr) {
+        free(mh);
+        return NULL;
+    }
+
+    mh->length = (size_t)st.st_size;
+    if (size)
+        *size = st.st_size;
+    return (uint8_t*)mh;
+}
+
+/* OCall functions end */
+
 
 /* Application entry */
 int SGX_CDECL main(int argc, char *argv[])
@@ -88,17 +133,10 @@ int SGX_CDECL main(int argc, char *argv[])
         getchar();
         return -1; 
     }
- 
-    /* Utilize edger8r attributes */
-    edger8r_array_attributes();
-    edger8r_pointer_attributes();
-    edger8r_type_attributes();
-    edger8r_function_attributes();
-    
-    /* Utilize trusted libraries */
-    ecall_libc_functions();
-    ecall_libcxx_functions();
-    ecall_thread_functions();
+
+    int ret = -1;
+    measure_enclave(global_eid, &ret, "wasm_vm_enclave.signed.so");
+    printf("%d\n", ret);
 
     /* Destroy the enclave */
     sgx_destroy_enclave(global_eid);

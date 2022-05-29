@@ -35,6 +35,10 @@
 
 #define LOOPS_PER_THREAD 500
 
+/* se_map begin */
+#define THE_INVALID_HANDLE (-1)
+/* se_map end */
+
 typedef void *buffer_t;
 typedef int array_t[10];
 

@@ -50,6 +50,9 @@ enclave {
     from "TrustedLibrary/Libcxx.edl" import ecall_exception, ecall_map;
     from "TrustedLibrary/Thread.edl" import *;
 
+    trusted {
+        public int measure_enclave([in, string] const char *dllpath);
+    };
     /* 
      * ocall_print_string - invokes OCALL to display string buffer inside the enclave.
      *  [in]: copy the string buffer to App outside.
@@ -57,6 +60,9 @@ enclave {
      */
     untrusted {
         void ocall_print_string([in, string] const char *str);
+        int ocall_open_file([in, string] const char *filepath);
+        void ocall_close_handle(int fd);
+        uint8_t* ocall_map_file(int fd, [out] size_t *size);
     };
 
 };
