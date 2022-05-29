@@ -45,7 +45,7 @@ parent-dir = $(patsubst %/,%,$(dir $(1:%/=%)))
 my-dir = $(realpath $(call parent-dir,$(lastword $(MAKEFILE_LIST))))
 
 
-# ROOT_DIR              := $(call my-dir)
+ROOT_DIR2              := $(call my-dir)
 ROOT_DIR := /home/nsec-sgx/SGXENV/linux-sgx
 ifneq ($(words $(subst :, ,$(ROOT_DIR))), 1)
   $(error main directory cannot contain spaces nor colons)
@@ -70,6 +70,8 @@ LINUX_SDK_DIR         := $(ROOT_DIR)/sdk
 LINUX_UNITTESTS       := $(ROOT_DIR)/unittests
 DCAP_DIR              := $(LINUX_EXTERNAL_DIR)/dcap_source
 LIBUNWIND_DIR         := $(ROOT_DIR)/sdk/cpprt/linux/libunwind
+
+INCLUDE_DIR           := $(ROOT_DIR2)/Include
 
 CP    := cp -f
 MKDIR := mkdir -p

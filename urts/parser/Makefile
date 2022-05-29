@@ -53,8 +53,8 @@ ifneq ($(HOST_OS), darwin)
   CXXFLAGS += -Werror
 endif
 
-CXXFLAGS += -I$(COMMON_DIR)/inc/         \
-            -I$(COMMON_DIR)/inc/internal \
+CXXFLAGS += -I$(SGX_SDK)/include		 \
+            -I$(INCLUDE_DIR)/internal    \
             -I.                          \
             -I..
 
