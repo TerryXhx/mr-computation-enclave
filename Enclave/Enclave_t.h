@@ -38,6 +38,7 @@ typedef union union_foo_t {
 } union_foo_t;
 #endif
 
+int measure_enclave(const char* dllpath);
 void ecall_type_char(char val);
 void ecall_type_int(int val);
 void ecall_type_float(float val);
@@ -72,6 +73,9 @@ void ecall_producer(void);
 void ecall_consumer(void);
 
 sgx_status_t SGX_CDECL ocall_print_string(const char* str);
+sgx_status_t SGX_CDECL ocall_open_file(int* retval, const char* filepath);
+sgx_status_t SGX_CDECL ocall_close_handle(int fd);
+sgx_status_t SGX_CDECL ocall_map_file(uint8_t** retval, int fd, size_t* size);
 sgx_status_t SGX_CDECL ocall_pointer_user_check(int* val);
 sgx_status_t SGX_CDECL ocall_pointer_in(int* val);
 sgx_status_t SGX_CDECL ocall_pointer_out(int* val);

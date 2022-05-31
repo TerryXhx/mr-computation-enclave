@@ -79,7 +79,6 @@ int measure_enclave(const char *dllpath) {
     }
     printf("addr: %p\n", mh->base_addr);
     printf("size: %lu\n", file_size);
-
     // Parse enclave
     std::unique_ptr<BinParser> parser(binparser::get_parser(mh->base_addr, file_size));
     ocall_close_handle(fh);
