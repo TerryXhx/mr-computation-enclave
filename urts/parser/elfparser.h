@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string>
+#include <string.h>
 #include <map>
 
 class ElfParser : public BinParser, private Uncopyable {

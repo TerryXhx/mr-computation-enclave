@@ -43,18 +43,6 @@ typedef union union_foo_t {
 #define OCALL_PRINT_STRING_DEFINED__
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_print_string, (const char* str));
 #endif
-#ifndef OCALL_OPEN_FILE_DEFINED__
-#define OCALL_OPEN_FILE_DEFINED__
-int SGX_UBRIDGE(SGX_NOCONVENTION, ocall_open_file, (const char* filepath));
-#endif
-#ifndef OCALL_CLOSE_HANDLE_DEFINED__
-#define OCALL_CLOSE_HANDLE_DEFINED__
-void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_close_handle, (int fd));
-#endif
-#ifndef OCALL_MAP_FILE_DEFINED__
-#define OCALL_MAP_FILE_DEFINED__
-uint8_t* SGX_UBRIDGE(SGX_NOCONVENTION, ocall_map_file, (int fd, size_t* size));
-#endif
 #ifndef OCALL_POINTER_USER_CHECK_DEFINED__
 #define OCALL_POINTER_USER_CHECK_DEFINED__
 void SGX_UBRIDGE(SGX_NOCONVENTION, ocall_pointer_user_check, (int* val));
@@ -96,7 +84,6 @@ int SGX_UBRIDGE(SGX_CDECL, sgx_thread_setwait_untrusted_events_ocall, (const voi
 int SGX_UBRIDGE(SGX_CDECL, sgx_thread_set_multiple_untrusted_events_ocall, (const void** waiters, size_t total));
 #endif
 
-sgx_status_t measure_enclave(sgx_enclave_id_t eid, int* retval, const char* dllpath);
 sgx_status_t ecall_type_char(sgx_enclave_id_t eid, char val);
 sgx_status_t ecall_type_int(sgx_enclave_id_t eid, int val);
 sgx_status_t ecall_type_float(sgx_enclave_id_t eid, float val);

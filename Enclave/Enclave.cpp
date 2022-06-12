@@ -35,10 +35,6 @@
 #include <stdio.h> /* vsnprintf */
 #include <string.h>
 
-#include "parserfactory.h"
-#include "user_types.h"
-#include "enclave_types.h"
-
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -52,35 +48,4 @@ int printf(const char* fmt, ...)
     va_end(ap);
     ocall_print_string(buf);
     return (int)strnlen(buf, BUFSIZ - 1) + 1;
-}
-
-#define THE_INVALID_HANDLE (-1)
-int measure_enclave(const char *dllpath) {
-    bool res = false;
-    size_t file_size = 0;
-    uint64_t quota = 0;
-    bin_fmt_t bin_fmt = BF_UNKNOWN;
-
-    int fh;         // file handle
-    ocall_open_file(&fh, dllpath);
-    if (fh == THE_INVALID_HANDLE) 
-    {
-        printf("Failed to open file %s\n", dllpath);
-        return -1;
-    }
-
-    uint8_t *tmp_mh;    // temporary map handle
-    ocall_map_file(&tmp_mh, fh, &file_size);
-    map_handle_t *mh = (map_handle_t *)tmp_mh;
-    if (!mh)
-    {
-        ocall_close_handle(fh);
-        return -1;
-    }
-    printf("addr: %p\n", mh->base_addr);
-    printf("size: %lu\n", file_size);
-    // Parse enclave
-    std::unique_ptr<BinParser> parser(binparser::get_parser(mh->base_addr, file_size));
-    ocall_close_handle(fh);
-    return 0;
 }

@@ -47,6 +47,9 @@
 #include "se_map.h"
 #include "user_types.h"
 
+#include "parserfactory.h"
+#include <memory>
+
 /* Global EID shared by multiple threads */
 sgx_enclave_id_t global_eid = 0;
 
@@ -68,7 +71,6 @@ int initialize_enclave(void)
     return 0;
 }
 
-/* OCall functions */
 void ocall_print_string(const char *str)
 {
     /* Proxy/Bridge will check the length and null-terminate 
@@ -77,7 +79,7 @@ void ocall_print_string(const char *str)
     printf("%s", str);
 }
 
-int ocall_open_file(const char *filepath)
+int open_file(const char *filepath)
 {
     FILE* fp = fopen(filepath, "rb");
     if (fp == NULL)
@@ -85,12 +87,12 @@ int ocall_open_file(const char *filepath)
     return fileno(fp);
 }
 
-void ocall_close_handle(int fd)
+void close_handle(int fd)
 {
     close(fd);
 }
 
-uint8_t* ocall_map_file(int fd, size_t *size)
+uint8_t* map_file(int fd, size_t *size)
 {
     struct stat st;
     memset(&st, 0, sizeof(st));
@@ -108,6 +110,7 @@ uint8_t* ocall_map_file(int fd, size_t *size)
     );
     if (MAP_FAILED == mh->base_addr) {
         free(mh);
+        printf("fail\n");
         return NULL;
     }
 
@@ -117,9 +120,41 @@ uint8_t* ocall_map_file(int fd, size_t *size)
     return (uint8_t*)mh;
 }
 
-/* OCall functions end */
+int parse_enclave(const char *dllpath) {
+    bool res = false;
+    size_t file_size = 0;
+    uint64_t quota = 0;
+    bin_fmt_t bin_fmt = BF_UNKNOWN;
 
+    int fh = open_file(dllpath);
+    if (fh == THE_INVALID_HANDLE) 
+    {
+        printf("Failed to open file %s\n", dllpath);
+        return -1;
+    }
 
+    map_handle_t *mh = (map_handle_t *)map_file(fh, &file_size);
+    if (!mh)
+    {
+        close_handle(fh);
+        return -1;
+    }
+
+    // Parse enclave
+    std::unique_ptr<BinParser> parser(binparser::get_parser(mh->base_addr, file_size));
+    assert(parser != NULL);
+
+    sgx_status_t status = parser->run_parser();
+    if (status != SGX_SUCCESS)
+    {
+        printf("Failed to parse enclave\n");
+        close_handle(fh);
+        return false;
+    }
+
+    close_handle(fh);
+    return 0;
+}
 /* Application entry */
 int SGX_CDECL main(int argc, char *argv[])
 {
@@ -135,7 +170,7 @@ int SGX_CDECL main(int argc, char *argv[])
     }
 
     int ret = -1;
-    measure_enclave(global_eid, &ret, "wasm_vm_enclave.signed.so");
+    ret = parse_enclave("wasm_vm_enclave.signed.so");
     printf("%d\n", ret);
 
     /* Destroy the enclave */

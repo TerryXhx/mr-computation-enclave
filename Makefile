@@ -85,7 +85,7 @@ else
 endif
 
 App_Cpp_Files := App/App.cpp App/ErrorSupport.cpp $(wildcard App/Edger8rSyntax/*.cpp) $(wildcard App/TrustedLibrary/*.cpp)
-App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I$(INCLUDE_DIR)/internal
+App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I$(INCLUDE_DIR)/internal -Iurts -Iurts/parser
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 
@@ -102,7 +102,7 @@ else
 endif
 
 App_Cpp_Flags := $(App_C_Flags)
-App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread 
+App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread -L$(ROOT_DIR2)/urts/parser -lenclaveparser
 
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
 
@@ -120,8 +120,8 @@ endif
 Crypto_Library_Name := sgx_tcrypto
 
 SGX_SDK_INTERNAL := /home/nsec-sgx/SGXENV/linux-sgx/common/inc/internal
-Enclave_Cpp_Files := Enclave/Enclave.cpp $(wildcard Enclave/parser/*.cpp) $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
-Enclave_Include_Paths := -IInclude -IEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx -I$(SGX_SDK_INTERNAL) -IEnclave/urts -IEnclave/urts/parser
+Enclave_Cpp_Files := Enclave/Enclave.cpp $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
+Enclave_Include_Paths := -IInclude -IEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx -I$(SGX_SDK_INTERNAL)
 
 Enclave_C_Flags := $(Enclave_Include_Paths) -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections $(MITIGATION_CFLAGS)
 CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
@@ -151,13 +151,6 @@ Enclave_Link_Flags := $(MITIGATION_LDFLAGS) $(Enclave_Security_Link_Flags) \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections   \
 	-Wl,--version-script=Enclave/Enclave.lds	   \
-	-L$(ROOT_DIR2)/Enclave/urts/parser -lenclaveparser
-
-COMMON_C_OBJS := se_trace.o se_map.o
-COMMON_SRC_DIR := $(ROOT_DIR)/common/src/
-COMMON_CFLAGS := -fpie -DOPENSSL_API_COMPAT=10101
-COMMON_INC :=
-vpath %.cpp $(COMMON_SRC_DIR)
 
 Enclave_Cpp_Objects := $(sort $(Enclave_Cpp_Files:.cpp=.o))
 
@@ -241,7 +234,7 @@ App/%.o: App/%.cpp  App/Enclave_u.h
 	@echo "CXX  <=  $<"
 
 $(App_Name): App/Enclave_u.o $(App_Cpp_Objects)
-	@$(CXX) $^ -o $@ $(App_Link_Flags)
+	@$(CXX) $^ App/se_trace.o App/se_detect.o -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
 
 ######## Enclave Objects ########
@@ -256,14 +249,12 @@ Enclave/Enclave_t.o: Enclave/Enclave_t.c
 	@$(CC) $(SGX_COMMON_CFLAGS) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-$(COMMON_C_OBJS): %.o: $(COMMON_SRC_DIR)%.c
-	$(CC) $(COMMON_CFLAGS) $(Enclave_Cpp_Flags) -c $< -o $@
 
-Enclave/%.o: Enclave/%.cpp Enclave/Enclave_t.h $(COMMON_C_OBJS)
+Enclave/%.o: Enclave/%.cpp Enclave/Enclave_t.h
 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(Enclave_Cpp_Flags) $(COMMON_C_OBJS) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(Enclave_Name): Enclave/Enclave_t.o $(Enclave_Cpp_Objects) Enclave/se_trace.o Enclave/se_map.o Enclave/sgx_memset_s.o
+$(Enclave_Name): Enclave/Enclave_t.o $(Enclave_Cpp_Objects)
 	@$(CXX) $^ -o $@ $(Enclave_Link_Flags)
 	@echo "LINK =>  $@"
 
