@@ -85,7 +85,7 @@ else
 endif
 
 App_Cpp_Files := App/App.cpp App/ErrorSupport.cpp $(wildcard App/Edger8rSyntax/*.cpp) $(wildcard App/TrustedLibrary/*.cpp)
-App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I$(INCLUDE_DIR)/internal -Iurts -Iurts/parser
+App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I$(INCLUDE_DIR)/internal -Iurts -Iurts/parser -IInclude/internal
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 
@@ -103,6 +103,19 @@ endif
 
 App_Cpp_Flags := $(App_C_Flags)
 App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread -L$(ROOT_DIR2)/urts/parser -lenclaveparser
+
+CXXFLAGS += -Werror
+CFLAGS += -Werror
+
+DIR1 = $(ROOT_DIR2)/urts/
+DIR2 = $(ROOT_DIR2)/Include/src/
+
+OBJ1 := se_detect.o
+CPP_OBJS := $(OBJ1)
+C_OBJS := se_trace.o
+OBJS := $(CPP_OBJS) $(C_OBJS)
+
+vpath %.cpp $(DIR1):$(DIR2)
 
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
 
@@ -233,9 +246,17 @@ App/%.o: App/%.cpp  App/Enclave_u.h
 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(App_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-$(App_Name): App/Enclave_u.o $(App_Cpp_Objects)
-	@$(CXX) $^ App/se_trace.o App/se_detect.o -o $@ $(App_Link_Flags)
+$(App_Name): App/Enclave_u.o $(App_Cpp_Objects) $(OBJS)
+	@$(CXX) $^ -o $@ $(App_Link_Flags)
 	@echo "LINK =>  $@"
+
+$(CPP_OBJS): %.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(App_Include_Paths) -c $< -o $@
+
+$(C_OBJS):   %.o:$(DIR2)%.c
+	$(CC) $(CFLAGS) $(App_Include_Paths) -c $< -o $@
+
+
 
 ######## Enclave Objects ########
 
@@ -265,4 +286,4 @@ $(Signed_Enclave_Name): $(Enclave_Name)
 .PHONY: clean
 
 clean:
-	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.*
+	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.* $(OBJS)

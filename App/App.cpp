@@ -147,9 +147,8 @@ int parse_enclave(const char *dllpath) {
     sgx_status_t status = parser->run_parser();
     if (status != SGX_SUCCESS)
     {
-        printf("Failed to parse enclave\n");
         close_handle(fh);
-        return false;
+        return -1;
     }
 
     close_handle(fh);
@@ -169,9 +168,11 @@ int SGX_CDECL main(int argc, char *argv[])
         return -1; 
     }
 
-    int ret = -1;
-    ret = parse_enclave("wasm_vm_enclave.signed.so");
-    printf("%d\n", ret);
+    if (parse_enclave("wasm_vm_enclave.signed.so") == -1)
+    {
+        printf("Failed to parse enclave\n");
+        return -1;
+    }
 
     /* Destroy the enclave */
     sgx_destroy_enclave(global_eid);
