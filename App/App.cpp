@@ -48,6 +48,7 @@
 #include "user_types.h"
 
 #include "parserfactory.h"
+#include "manage_metadata.h"
 #include <memory>
 
 /* Global EID shared by multiple threads */
@@ -120,11 +121,54 @@ uint8_t* map_file(int fd, size_t *size)
     return (uint8_t*)mh;
 }
 
-int parse_enclave(const char *dllpath) {
+// static int load_enclave(BinParser *parser, metadata_t *metadata)
+// {
+//     std::unique_ptr<CLoader> ploader(new CLoader(const_cast<uint8_t *>(parser->get_start_addr()), *parser));
+//     return ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
+// }
+
+
+int parse_enclave(const char *dllpath, const char *xmlpath) {
     bool res = false;
     size_t file_size = 0;
     uint64_t quota = 0;
     bin_fmt_t bin_fmt = BF_UNKNOWN;
+    xml_parameter_t parameter[] = {/* name,                 max_value          min_value,      default value,       flag */
+                                   {"ProdID",               0xFFFF,                0,              0,                   0},
+                                   {"ISVSVN",               0xFFFF,                0,              0,                   0},
+                                   {"ReleaseType",          1,                     0,              0,                   0},
+                                   {"IntelSigned",          1,                     0,              0,                   0},
+                                   {"ProvisionKey",         1,                     0,              0,                   0},
+                                   {"LaunchKey",            1,                     0,              0,                   0},
+                                   {"DisableDebug",         1,                     0,              0,                   0},
+                                   {"HW",                   0x10,                  0,              0,                   0},
+                                   {"TCSNum",               0xFFFFFFFF,            TCS_NUM_MIN,    TCS_NUM_MIN,         0},
+                                   {"TCSMaxNum",            0xFFFFFFFF,            TCS_NUM_MIN,    TCS_NUM_MIN,         0},
+                                   {"TCSMinPool",           0xFFFFFFFF,            0,              TCS_NUM_MIN,         0},
+                                   {"TCSPolicy",            TCS_POLICY_UNBIND,     TCS_POLICY_BIND,TCS_POLICY_UNBIND,   0},
+                                   {"StackMaxSize",         ENCLAVE_MAX_SIZE_64/2, STACK_SIZE_MIN, STACK_SIZE_MAX,      0},
+                                   {"StackMinSize",         ENCLAVE_MAX_SIZE_64/2, STACK_SIZE_MIN, STACK_SIZE_MIN,      0},
+                                   {"HeapMaxSize",          ENCLAVE_MAX_SIZE_64/2, 0,              HEAP_SIZE_MAX,       0},
+                                   {"HeapMinSize",          ENCLAVE_MAX_SIZE_64/2, 0,              HEAP_SIZE_MIN,       0},
+                                   {"HeapInitSize",         ENCLAVE_MAX_SIZE_64/2, 0,              HEAP_SIZE_MIN,       0},
+                                   {"ReservedMemMaxSize",   ENCLAVE_MAX_SIZE_64/2, 0,              RSRV_SIZE_MAX,       0},
+                                   {"ReservedMemMinSize",   ENCLAVE_MAX_SIZE_64/2, 0,              RSRV_SIZE_MIN,       0},
+                                   {"ReservedMemInitSize",  ENCLAVE_MAX_SIZE_64/2, 0,              RSRV_SIZE_MIN,       0},
+                                   {"ReservedMemExecutable",1,                     0,              0,                   0},
+                                   {"MiscSelect",           0x00FFFFFFFF,          0,              DEFAULT_MISC_SELECT, 0},
+                                   {"MiscMask",             0x00FFFFFFFF,          0,              DEFAULT_MISC_MASK,   0},
+                                   {"EnableKSS",            1,                     0,              0,                   0},
+                                   {"ISVFAMILYID_H",        ISVFAMILYID_MAX,       0,              0,                   0},
+                                   {"ISVFAMILYID_L",        ISVFAMILYID_MAX ,      0,              0,                   0},
+                                   {"ISVEXTPRODID_H",       ISVEXTPRODID_MAX,      0,              0,                   0},
+                                   {"ISVEXTPRODID_L",       ISVEXTPRODID_MAX,      0,              0,                   0},
+                                   {"EnclaveImageAddress",  0xFFFFFFFFFFFFFFFF,    0x1000,         0,                   0},
+                                   {"ELRangeStartAddress",  0xFFFFFFFFFFFFFFFF,    0,              0,                   0},
+                                   {"ELRangeSize",          0xFFFFFFFFFFFFFFFF,    0x1000,         0,                   0},
+				   {"PKRU",                 FEATURE_LOADER_SELECTS,                     FEATURE_MUST_BE_DISABLED,              FEATURE_MUST_BE_DISABLED,                   0}};
+    size_t parameter_count = sizeof(parameter)/sizeof(parameter[0]);
+    uint8_t metadata_raw[METADATA_SIZE];
+    metadata_t *metadata = (metadata_t*)metadata_raw;
 
     int fh = open_file(dllpath);
     if (fh == THE_INVALID_HANDLE) 
@@ -151,6 +195,24 @@ int parse_enclave(const char *dllpath) {
         return -1;
     }
 
+    // TODO: need to check init section?
+
+    // generate metadata
+    // Parse the xml file to get the metadata
+    if(parse_metadata_file(xmlpath, parameter, (int)parameter_count) == false)
+    {
+        return -1;
+    }
+
+    CMetadata meta(metadata, parser.get());
+    if(meta.build_metadata(parameter) == false)
+    {
+        close_handle(fh);
+        return false;
+    }
+
+    // TODO: dumptextrel chcek
+
     close_handle(fh);
     return 0;
 }
@@ -168,7 +230,7 @@ int SGX_CDECL main(int argc, char *argv[])
         return -1; 
     }
 
-    if (parse_enclave("wasm_vm_enclave.signed.so") == -1)
+    if (parse_enclave("wasm_vm_enclave.signed.so", "Enclave.config.xml") == -1)
     {
         printf("Failed to parse enclave\n");
         return -1;

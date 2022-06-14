@@ -85,7 +85,7 @@ else
 endif
 
 App_Cpp_Files := App/App.cpp App/ErrorSupport.cpp $(wildcard App/Edger8rSyntax/*.cpp) $(wildcard App/TrustedLibrary/*.cpp)
-App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I$(INCLUDE_DIR)/internal -Iurts -Iurts/parser -IInclude/internal
+App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I$(INCLUDE_DIR)/internal -Iurts -Iurts/linux -Iurts/parser -IInclude/internal -Isigntool -Iexternal/tinyxml2
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 
@@ -107,15 +107,21 @@ App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread -L$(ROO
 CXXFLAGS += -Werror
 CFLAGS += -Werror
 
-DIR1 = $(ROOT_DIR2)/urts/
-DIR2 = $(ROOT_DIR2)/Include/src/
+DIR1 := $(ROOT_DIR2)/urts/
+DIR2 := $(ROOT_DIR2)/Include/src/
+DIR3 := $(ROOT_DIR2)/signtool/
+DIR4 := $(ROOT_DIR2)/external/tinyxml2/
 
 OBJ1 := se_detect.o
-CPP_OBJS := $(OBJ1)
+OBJ2 := manage_metadata.o \
+		util_st.o		  \
+		# enclave_creator_sign.o
+OBJ3 := tinyxml2.o
+CPP_OBJS := $(OBJ1) $(OBJ2) $(OBJ3)
 C_OBJS := se_trace.o
 OBJS := $(CPP_OBJS) $(C_OBJS)
 
-vpath %.cpp $(DIR1):$(DIR2)
+vpath %.cpp $(DIR1):$(DIR2):$(DIR3):$(DIR4)
 
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
 
