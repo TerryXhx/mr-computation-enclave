@@ -33,7 +33,7 @@
 #ifndef _LOADER_H_
 #define _LOADER_H_
 
-#include "se_wrapper.h"
+// #include "se_wrapper.h"
 #include "arch.h"
 #include "enclave.h"
 #include "enclave_creator.h"

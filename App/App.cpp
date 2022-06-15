@@ -130,7 +130,7 @@ static int load_enclave(BinParser *parser, metadata_t *metadata)
 }
 
 
-int parse_enclave(const char *dllpath, const char *xmlpath) {
+int compute_measurement(const char *dllpath, const char *xmlpath) {
     bool res = false;
     size_t file_size = 0;
     uint64_t quota = 0;
@@ -240,7 +240,7 @@ int SGX_CDECL main(int argc, char *argv[])
         return -1; 
     }
 
-    if (parse_enclave("wasm_vm_enclave.signed.so", "Enclave.config.xml") == -1)
+    if (compute_measurement("wasm_vm_enclave.signed.so", "Enclave.config.xml") == -1)
     {
         printf("Failed to parse enclave\n");
         return -1;
