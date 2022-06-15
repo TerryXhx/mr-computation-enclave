@@ -102,22 +102,25 @@ else
 endif
 
 App_Cpp_Flags := $(App_C_Flags)
-App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread -L$(ROOT_DIR2)/urts/parser -lenclaveparser
+App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread -L$(ROOT_DIR2)/urts/parser -lenclaveparser -lcrypto
 
 CXXFLAGS += -Werror
 CFLAGS += -Werror
+CFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
+CXXFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
 
 DIR1 := $(ROOT_DIR2)/urts/
 DIR2 := $(ROOT_DIR2)/Include/src/
 DIR3 := $(ROOT_DIR2)/signtool/
 DIR4 := $(ROOT_DIR2)/external/tinyxml2/
 
-OBJ1 := se_detect.o
+OBJ1 := se_detect.o loader.o
 OBJ2 := manage_metadata.o \
 		util_st.o		  \
-		# enclave_creator_sign.o
+		enclave_creator_sign.o
 OBJ3 := tinyxml2.o
-CPP_OBJS := $(OBJ1) $(OBJ2) $(OBJ3)
+OBJ4 := sgx_memset_s.o crypto_evp_digest.o
+CPP_OBJS := $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4)
 C_OBJS := se_trace.o
 OBJS := $(CPP_OBJS) $(C_OBJS)
 

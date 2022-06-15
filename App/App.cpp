@@ -49,6 +49,8 @@
 
 #include "parserfactory.h"
 #include "manage_metadata.h"
+#include "loader.h"
+#include "enclave_creator_sign.h"
 #include <memory>
 
 /* Global EID shared by multiple threads */
@@ -121,11 +123,11 @@ uint8_t* map_file(int fd, size_t *size)
     return (uint8_t*)mh;
 }
 
-// static int load_enclave(BinParser *parser, metadata_t *metadata)
-// {
-//     std::unique_ptr<CLoader> ploader(new CLoader(const_cast<uint8_t *>(parser->get_start_addr()), *parser));
-//     return ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
-// }
+static int load_enclave(BinParser *parser, metadata_t *metadata)
+{
+    std::unique_ptr<CLoader> ploader(new CLoader(const_cast<uint8_t *>(parser->get_start_addr()), *parser));
+    return ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
+}
 
 
 int parse_enclave(const char *dllpath, const char *xmlpath) {
@@ -169,6 +171,7 @@ int parse_enclave(const char *dllpath, const char *xmlpath) {
     size_t parameter_count = sizeof(parameter)/sizeof(parameter[0]);
     uint8_t metadata_raw[METADATA_SIZE];
     metadata_t *metadata = (metadata_t*)metadata_raw;
+    uint8_t enclave_hash[SGX_HASH_SIZE] = {0};
 
     int fh = open_file(dllpath);
     if (fh == THE_INVALID_HANDLE) 
@@ -200,7 +203,7 @@ int parse_enclave(const char *dllpath, const char *xmlpath) {
     // generate metadata
     // Parse the xml file to get the metadata
     if(parse_metadata_file(xmlpath, parameter, (int)parameter_count) == false)
-    {
+    {   
         return -1;
     }
 
@@ -213,6 +216,13 @@ int parse_enclave(const char *dllpath, const char *xmlpath) {
 
     // TODO: dumptextrel chcek
 
+    // Load enclave to get enclave hash
+    int ret = load_enclave(parser.release(), metadata);
+    ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(enclave_hash, SGX_HASH_SIZE, &quota);
+
+    for (int i = 0; i < SGX_HASH_SIZE; ++i)
+        printf("%02x ", enclave_hash[i]);
+    printf("\n");
     close_handle(fh);
     return 0;
 }
