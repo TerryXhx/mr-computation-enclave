@@ -1331,8 +1331,9 @@ bool update_metadata(const char *path, const metadata_t *metadata, uint64_t meta
 {
     assert(path != NULL && metadata != NULL);
 
-    return write_data_to_file(path, std::ios::in | std::ios::binary| std::ios::out,
-        reinterpret_cast<uint8_t *>(const_cast<metadata_t *>( metadata)), METADATA_SIZE, (long)meta_offset);
+    // return write_data_to_file(path, std::ios::in | std::ios::binary| std::ios::out,
+    //     reinterpret_cast<uint8_t *>(const_cast<metadata_t *>( metadata)), METADATA_SIZE, (long)meta_offset);
+    return (path && metadata && meta_offset == 0);
 }
 
 

@@ -29,7 +29,7 @@
 #
 #
 
-include ../../../buildenv.mk
+include ../../buildenv.mk
 
 ifdef DEBUG
 CXXFLAGS += -USE_DEBUG_LEVEL -DSE_DEBUG_LEVEL=SE_TRACE_DEBUG #-DSE_DEBUG_LEVEL=SE_TRACE_WARNING

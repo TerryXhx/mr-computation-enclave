@@ -62,7 +62,7 @@ public:
     int trim_accept(uint64_t addr);
     int remove_range(uint64_t fromaddr, uint64_t numpages);
 
-private:
+// private:
     uint8_t m_enclave_hash[SGX_HASH_SIZE];
     EVP_MD_CTX  *m_ctx;
     bool m_hash_valid_flag;

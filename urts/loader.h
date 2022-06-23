@@ -35,7 +35,7 @@
 
 // #include "se_wrapper.h"
 #include "arch.h"
-#include "enclave.h"
+// #include "enclave.h"
 #include "enclave_creator.h"
 #include "section_info.h"
 #include "launch_checker.h"
@@ -51,11 +51,18 @@
 #endif
 
 class BinParser;
+class Section;
 
 class CLoader: private Uncopyable
 {
 public:
-    CLoader(uint8_t *mapped_file_base, BinParser &parser);
+    // CLoader(uint8_t *mapped_file_base, BinParser &parser);
+    CLoader(
+        std::vector<uint8_t> reloc_bitmap, 
+        std::vector<Section *> parser_sections,
+        const uint8_t *parser_start_addr,
+        uint64_t parser_enclave_max_size
+    );
     virtual ~CLoader();
     int load_enclave(SGXLaunchToken *lc, int flag, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
     int load_enclave_ex(SGXLaunchToken *lc, bool is_debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
@@ -65,9 +72,9 @@ public:
     uint64_t get_elrange_start_addr() const;
     uint64_t get_elrange_size() const;
     const secs_t& get_secs() const;
-    const std::vector<std::pair<tcs_t *, bool>>& get_tcs_list() const;
-    void* get_symbol_address(const char* const sym);
-    int set_memory_protection();
+    // const std::vector<std::pair<tcs_t *, bool>>& get_tcs_list() const;
+    // void* get_symbol_address(const char* const sym);
+    // int set_memory_protection();
     int post_init_action(layout_t *start, layout_t *end, uint64_t delta);
     int post_init_action_commit(layout_t *start, layout_t *end, uint64_t delta);
 
@@ -92,18 +99,23 @@ private:
     int set_context_protection(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
     int set_elrange_config();
 
-    uint8_t             *m_mapped_file_base;
+    // uint8_t             *m_mapped_file_base;
     sgx_enclave_id_t    m_enclave_id;
     void                *m_start_addr;
     uint64_t            m_elrange_start_address;
     uint64_t            m_elrange_size;
 
     // the TCS list
-    std::vector<std::pair<tcs_t *, bool>> m_tcs_list;
+    // std::vector<std::pair<tcs_t *, bool>> m_tcs_list;
     // the enclave creation parameters
     const metadata_t    *m_metadata;
     secs_t              m_secs;
-    BinParser           &m_parser;
+    // BinParser           &m_parser;
+
+    std::vector<uint8_t> m_reloc_bitmap;
+    std::vector<Section*> m_parser_sections;
+    const uint8_t *m_parser_start_addr;
+    uint64_t m_parser_enclave_max_size;
 };
 
 #endif

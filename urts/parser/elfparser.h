@@ -96,7 +96,7 @@ public:
 
     bool has_init_section() const;
 
-private:
+// private:
     const uint8_t*         m_start_addr;
     uint64_t               m_len;
     bin_fmt_t              m_bin_fmt;

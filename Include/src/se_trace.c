@@ -52,11 +52,13 @@ void se_trace_internal(int debug_level, const char *fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-    if (SE_TRACE_NOTICE == debug_level)
-        vfprintf(stdout, fmt, args);
-    else
-        vfprintf(stderr, fmt, args);
+    // if (SE_TRACE_NOTICE == debug_level)
+    //     vfprintf(stdout, fmt, args);
+    // else
+    //     vfprintf(stderr, fmt, args);
     va_end(args);
+    if (SE_TRACE_NOTICE == debug_level)
+        return;
 
     return;
 }

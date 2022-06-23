@@ -97,7 +97,7 @@ typedef struct _xml_parameter_t
 
 
 bool parse_metadata_file(const char *xmlpath, xml_parameter_t *parameter, int parameter_count);
-bool update_metadata(const char *path, const metadata_t *metadata, uint64_t meta_offset);
+// bool update_metadata(const char *path, const metadata_t *metadata, uint64_t meta_offset);
 bool print_metadata(const char *path, const metadata_t *metadata);
 
 class CMetadata: private Uncopyable

@@ -100,7 +100,8 @@ int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     if(EVP_DigestInit_ex(m_ctx, EVP_sha256(), NULL) != 1)
     {
         se_trace(SE_TRACE_DEBUG, "ERROR - EVP_DigestInit_ex: %s.\n", ERR_error_string(ERR_get_error(), NULL));
-        return SGX_ERROR_UNEXPECTED;
+        // return SGX_ERROR_UNm_tcs_listEXPECTED;
+        return 0;
     }
 
     uint8_t ecreat_val[SIZE_NAMED_VALUE] = "ECREATE";

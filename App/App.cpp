@@ -49,8 +49,8 @@
 
 #include "parserfactory.h"
 #include "manage_metadata.h"
-#include "loader.h"
-#include "enclave_creator_sign.h"
+// #include "loader.h"
+// #include "enclave_creator_sign.h"
 #include <memory>
 
 /* Global EID shared by multiple threads */
@@ -123,11 +123,11 @@ uint8_t* map_file(int fd, size_t *size)
     return (uint8_t*)mh;
 }
 
-static int load_enclave(BinParser *parser, metadata_t *metadata)
-{
-    std::unique_ptr<CLoader> ploader(new CLoader(const_cast<uint8_t *>(parser->get_start_addr()), *parser));
-    return ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
-}
+// static int load_enclave(BinParser *parser, metadata_t *metadata)
+// {
+//     std::unique_ptr<CLoader> ploader(new CLoader(const_cast<uint8_t *>(parser->get_start_addr()), *parser));
+//     return ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
+// }
 
 
 int compute_measurement(const char *dllpath, const char *xmlpath) {
@@ -188,7 +188,8 @@ int compute_measurement(const char *dllpath, const char *xmlpath) {
     }
 
     // Parse enclave
-    std::unique_ptr<BinParser> parser(binparser::get_parser(mh->base_addr, file_size));
+    // std::unique_ptr<BinParser> parser(binparser::get_parser(mh->base_addr, file_size));
+    BinParser *parser = binparser::get_parser(mh->base_addr, file_size);
     assert(parser != NULL);
 
     sgx_status_t status = parser->run_parser();
@@ -207,22 +208,56 @@ int compute_measurement(const char *dllpath, const char *xmlpath) {
         return -1;
     }
 
-    CMetadata meta(metadata, parser.get());
+    // CMetadata meta(metadata, parser.get());
+    CMetadata meta(metadata, parser);
     if(meta.build_metadata(parameter) == false)
     {
         close_handle(fh);
         return false;
     }
 
-    // TODO: dumptextrel chcek
+    // TODO: dumptextrel check
+
+    // get elements of parser used in loader
+    std::vector<uint8_t> bitmap;
+    parser->get_reloc_bitmap(bitmap);
+    size_t bitmap_size = bitmap.size();
+    uint8_t bitmap_raw[bitmap_size];
+    memcpy(bitmap_raw, bitmap.data(), bitmap_size);
+
+    const uint8_t *parser_start_addr = parser->get_start_addr();
+    uint64_t parser_enclave_max_size = parser->get_enclave_max_size();
+
+    std::vector<Section *> parser_sections = parser->get_sections();
+    size_t section_count = parser_sections.size();
+    uint8_t *parser_section_raw[section_count];
+    for(size_t i = 0; i < section_count; i++) {
+        // printf("%lu ", parser_sections[i]->get_rva());
+        parser_section_raw[i] = reinterpret_cast<uint8_t*>(parser_sections[i]);
+    }
+    // printf("\n");
+    // printf("bitmap: ");
+    // for (auto &i: bitmap)
+    //     printf("%u\t", i);
+    // printf("\n");
+    // printf("start_addr: %p\n", parser_start_addr);
+    // printf("max size: %lu\n", parser_enclave_max_size);
+    // printf("sections:");
+    // for (auto &p: parser_sections)
+    //     printf("%p\t", p);
+    // printf("\n");
+
+    int ecallret;
+    if (SGX_SUCCESS != ecall_load_enclave(global_eid, &ecallret, bitmap_raw, bitmap_size, parser_section_raw, section_count, parser_start_addr, parser_enclave_max_size, (uint8_t*)metadata) || ecallret != 1)
+        printf("fail\n");
 
     // Load enclave to get enclave hash
-    int ret = load_enclave(parser.release(), metadata);
-    ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(enclave_hash, SGX_HASH_SIZE, &quota);
+    // int ret = load_enclave(parser, metadata);
+    // ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(enclave_hash, SGX_HASH_SIZE, &quota);
 
-    for (int i = 0; i < SGX_HASH_SIZE; ++i)
-        printf("%02x ", enclave_hash[i]);
-    printf("\n");
+    // for (int i = 0; i < SGX_HASH_SIZE; ++i)
+        // printf("%02x ", enclave_hash[i]);
+    // printf("\n");
     close_handle(fh);
     return 0;
 }

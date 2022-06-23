@@ -35,8 +35,13 @@
 #include <stdio.h> /* vsnprintf */
 #include <string.h>
 
+#include "parserfactory.h"
+#include "elfparser.h"
+#include "elf64parser.h"
+#include "metadata.h"
 #include "loader.h"
-// #include "enclave_creator_sign.h"
+#include "enclave_creator_sign.h"
+
 /* 
  * printf: 
  *   Invokes OCALL to display the enclave buffer to the terminal.
@@ -52,7 +57,24 @@ int printf(const char* fmt, ...)
     return (int)strnlen(buf, BUFSIZ - 1) + 1;
 }
 
-void ecall() 
+int ecall_load_enclave(uint8_t *parser_bitmap, size_t bitmap_size, uint8_t **parser_section_raw, size_t section_count, const uint8_t *parser_start_addr, uint64_t parser_enclave_max_size, uint8_t *in_metadata)
 {
-
+    printf("success in\n");
+    metadata_t* metadata = (metadata_t*)in_metadata;
+    std::vector<uint8_t> bitmap(bitmap_size);
+    for (size_t i = 0; i < bitmap_size; i++)
+        bitmap[i] = parser_bitmap[i];
+    std::vector<Section *> parser_sections(section_count);
+    for (int i = 0; i < section_count; ++i)
+        parser_sections[i] = reinterpret_cast<Section *>(parser_section_raw[i]);
+    CLoader *ploader = new CLoader(bitmap, parser_sections, parser_start_addr, parser_enclave_max_size);
+    printf("success initialize\n");
+    ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
+    uint8_t enclave_hash[SGX_HASH_SIZE] = {0};
+    EnclaveCreatorST* enclave_creator = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator());
+    for (int i = 0; i < SGX_HASH_SIZE; ++i)
+        printf("%02x ", enclave_creator->m_enclave_hash[i]);
+    printf("\n");
+    // printf("%p\n", ploader);
+    return 1;
 }

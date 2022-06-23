@@ -1,0 +1,12 @@
+make[1]: Entering directory '/home/nsec-sgx/sgx-playground/mr-computation-enclave'
+/usr/local/bin/ld: loader.o: in function `CLoader::build_sections(std::vector<unsigned char, std::allocator<unsigned char> >*)':
+loader.cpp:(.text._ZN7CLoader14build_sectionsEPSt6vectorIhSaIhEE+0x3bf): undefined reference to `std::__throw_bad_alloc()'
+/usr/local/bin/ld: loader.o: in function `void std::vector<std::pair<unsigned long, unsigned long>, std::allocator<std::pair<unsigned long, unsigned long> > >::_M_realloc_insert<std::pair<unsigned long, unsigned long> >(__gnu_cxx::__normal_iterator<std::pair<unsigned long, unsigned long>*, std::vector<std::pair<unsigned long, unsigned long>, std::allocator<std::pair<unsigned long, unsigned long> > > >, std::pair<unsigned long, unsigned long>&&)':
+loader.cpp:(.text._ZNSt6vectorISt4pairImmESaIS1_EE17_M_realloc_insertIJS1_EEEvN9__gnu_cxx17__normal_iteratorIPS1_S3_EEDpOT_[_ZNSt6vectorISt4pairImmESaIS1_EE17_M_realloc_insertIJS1_EEEvN9__gnu_cxx17__normal_iteratorIPS1_S3_EEDpOT_]+0x176): undefined reference to `std::__throw_length_error(char const*)'
+/usr/local/bin/ld: enclave_creator_sign.o: in function `_GLOBAL__sub_I_enclave_image_address':
+enclave_creator_sign.cpp:(.text.startup._GLOBAL__sub_I_enclave_image_address+0x10): undefined reference to `std::ios_base::Init::Init()'
+/usr/local/bin/ld: enclave_creator_sign.cpp:(.text.startup._GLOBAL__sub_I_enclave_image_address+0x17): undefined reference to `std::ios_base::Init::~Init()'
+collect2: error: ld returned 1 exit status
+make[1]: *** [Makefile:310: enclave.so] Error 1
+make[1]: Leaving directory '/home/nsec-sgx/sgx-playground/mr-computation-enclave'
+make: *** [Makefile:225: all] Error 2
