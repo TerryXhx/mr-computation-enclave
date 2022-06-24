@@ -97,9 +97,8 @@ else
 	Urts_Library_Name := sgx_urts
 endif
 
-# App_Cpp_Files := App/App.cpp App/ErrorSupport.cpp $(wildcard App/Edger8rSyntax/*.cpp) $(wildcard App/TrustedLibrary/*.cpp)
 App_Cpp_Files := App/App.cpp App/ErrorSupport.cpp
-App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -I$(INCLUDE_DIR)/internal -Iurts -Iurts/linux -Iurts/parser -IInclude/internal -Isigntool -Iexternal/tinyxml2
+App_Include_Paths := -IInclude -IApp -I$(SGX_SDK)/include -IInclude/internal -Iurts -Iurts/linux -Iurts/parser -IInclude/internal -Isigntool -Iexternal/tinyxml2
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 
@@ -116,7 +115,7 @@ else
 endif
 
 App_Cpp_Flags := $(App_C_Flags)
-App_Link_Flags := $(SGXSSL_U_Link_Libraries) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread -L$(ROOT_DIR2)/urts/parser -lenclaveparser -lcrypto \
+App_Link_Flags := $(SGXSSL_U_Link_Libraries) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread -Lurts/parser -lenclaveparser -lcrypto \
 
 
 CXXFLAGS += -Werror
@@ -124,12 +123,11 @@ CFLAGS += -Werror
 CFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
 CXXFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
 
-DIR1 := $(ROOT_DIR2)/urts/
-DIR2 := $(ROOT_DIR2)/Include/src/
-DIR3 := $(ROOT_DIR2)/signtool/
-DIR4 := $(ROOT_DIR2)/external/tinyxml2/
+DIR1 := urts/
+DIR2 := Include/src/
+DIR3 := signtool/
+DIR4 := external/tinyxml2/
 
-# OBJ1 := se_detect.o loader.o 
 OBJ1 := se_detect.o
 OBJ2 := manage_metadata.o \
 		util_st.o
@@ -160,7 +158,6 @@ endif
 Crypto_Library_Name := sgx_tcrypto
 
 SGX_SDK_INTERNAL := /home/nsec-sgx/SGXENV/linux-sgx/common/inc/internal
-# Enclave_Cpp_Files := Enclave/Enclave.cpp $(wildcard Enclave/Edger8rSyntax/*.cpp) $(wildcard Enclave/TrustedLibrary/*.cpp)
 Enclave_Cpp_Files := Enclave/Enclave.cpp
 Enclave_Include_Paths := -IInclude -IEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx -I$(SGX_SDK_INTERNAL)\
 						 -Iurts -Iurts/linux -Isigntool -I$(SSLINCDIR) -Iurts/parser
@@ -186,7 +183,7 @@ Enclave_Security_Link_Flags := -Wl,-z,relro,-z,now,-z,noexecstack
 # Do NOT move the libraries linked with `--start-group' and `--end-group' within `--whole-archive' and `--no-whole-archive' options.
 # Otherwise, you may get some undesirable errors.
 Enclave_Link_Flags := $(MITIGATION_LDFLAGS) $(Enclave_Security_Link_Flags) \
-	-L$(ROOT_DIR2)/urts/parser -lenclaveparser	\
+	-Lurts/parser -lenclaveparser	\
 	$(SgxSSL_Link_Libraries) \
     -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_TRUSTED_LIBRARY_PATH) \
 	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
@@ -305,18 +302,10 @@ Enclave/%.o: Enclave/%.cpp Enclave/Enclave_t.h
 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-# loader.o: urts/loader.cpp
-# 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(Enclave_Cpp_Flags) -c urts/loader.cpp -o loader.o
-# 	@echo "CXX <= loader.cpp"
-
-# enclave_creator_sign.o: signtool/enclave_creator_sign.cpp
-# 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(Enclave_Cpp_Flags) -c signtool/enclave_creator_sign.cpp -o enclave_creator_sign.o
-# 	@echo "CXX <= enclave_creator_sign.o"
-
 $(ENCLAVE_MR_CPP_OBJS): %.o: %.cpp
 	$(CXX) $(SGX_COMMON_CXXFLAGS) $(Enclave_Cpp_Flags) -c $< -o $@
 
-$(Enclave_Name): Enclave/Enclave_t.o $(Enclave_Cpp_Objects) $(ENCLAVE_MR_CPP_OBJS) se_trace.o
+$(Enclave_Name): Enclave/Enclave_t.o $(Enclave_Cpp_Objects) $(ENCLAVE_MR_CPP_OBJS) $(C_OBJS)
 	@$(CXX) $^ -o $@ $(Enclave_Link_Flags)
 	@echo "LINK =>  $@"
 

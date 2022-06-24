@@ -596,7 +596,7 @@ bool CMetadata::update_layout_entries()
             m_layouts[i].entry.rva = m_rva;
             m_rva += (((uint64_t)m_layouts[i].entry.page_count) << SE_PAGE_SHIFT);
 
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", i, m_layouts[i].entry.id, layout_id_str[m_layouts[i].entry.id]);
+            // se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", i, m_layouts[i].entry.id, layout_id_str[m_layouts[i].entry.id]);
             se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", m_layouts[i].entry.page_count);
             se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", m_layouts[i].entry.attributes);
             se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", m_layouts[i].entry.si_flags);
@@ -611,7 +611,7 @@ bool CMetadata::update_layout_entries()
            uint64_t temp_rva = m_rva;
            m_rva += m_layouts[i].group.load_times * m_layouts[i].group.load_step;
 
-           se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", i, m_layouts[i].entry.id, layout_id_str[m_layouts[i].entry.id & ~(GROUP_FLAG)]);
+        //    se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", i, m_layouts[i].entry.id, layout_id_str[m_layouts[i].entry.id & ~(GROUP_FLAG)]);
            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u,  ", m_layouts[i].group.entry_count);
            se_trace(SE_TRACE_DEBUG, "Load Times = %u,     ", m_layouts[i].group.load_times);
            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX,  ", m_layouts[i].group.load_step);
@@ -751,7 +751,7 @@ bool CMetadata::build_layout_entries()
         layout.entry.page_count = extra_pages;
         m_layouts.push_back(layout);
 
-        se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, layout.entry.id, layout_id_str[layout.entry.id]);
+        // se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, layout.entry.id, layout_id_str[layout.entry.id]);
         se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout.entry.page_count);
         se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout.entry.attributes);
         se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout.entry.si_flags);

@@ -5,11 +5,13 @@ typedef struct ms_ecall_load_enclave_t {
 	int ms_retval;
 	uint8_t* ms_parser_bitmap;
 	size_t ms_bitmap_size;
-	uint8_t** ms_parser_sections;
-	size_t ms_section_count;
 	const uint8_t* ms_parser_start_addr;
 	uint64_t ms_parser_enclave_max_size;
 	uint8_t* ms_metadata;
+	size_t ms_metadata_size;
+	uint8_t* ms_parser_section_data;
+	size_t ms_section_count;
+	size_t ms_section_data_size;
 } ms_ecall_load_enclave_t;
 
 typedef struct ms_ocall_print_string_t {
@@ -209,17 +211,19 @@ static const struct {
 		(void*)Enclave_pthread_wakeup_ocall,
 	}
 };
-sgx_status_t ecall_load_enclave(sgx_enclave_id_t eid, int* retval, uint8_t* parser_bitmap, size_t bitmap_size, uint8_t** parser_sections, size_t section_count, const uint8_t* parser_start_addr, uint64_t parser_enclave_max_size, uint8_t* metadata)
+sgx_status_t ecall_load_enclave(sgx_enclave_id_t eid, int* retval, uint8_t* parser_bitmap, size_t bitmap_size, const uint8_t* parser_start_addr, uint64_t parser_enclave_max_size, uint8_t* metadata, size_t metadata_size, uint8_t* parser_section_data, size_t section_count, size_t section_data_size)
 {
 	sgx_status_t status;
 	ms_ecall_load_enclave_t ms;
 	ms.ms_parser_bitmap = parser_bitmap;
 	ms.ms_bitmap_size = bitmap_size;
-	ms.ms_parser_sections = parser_sections;
-	ms.ms_section_count = section_count;
 	ms.ms_parser_start_addr = parser_start_addr;
 	ms.ms_parser_enclave_max_size = parser_enclave_max_size;
 	ms.ms_metadata = metadata;
+	ms.ms_metadata_size = metadata_size;
+	ms.ms_parser_section_data = parser_section_data;
+	ms.ms_section_count = section_count;
+	ms.ms_section_data_size = section_data_size;
 	status = sgx_ecall(eid, 0, &ocall_table_Enclave, &ms);
 	if (status == SGX_SUCCESS && retval) *retval = ms.ms_retval;
 	return status;

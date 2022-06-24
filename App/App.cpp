@@ -49,8 +49,6 @@
 
 #include "parserfactory.h"
 #include "manage_metadata.h"
-// #include "loader.h"
-// #include "enclave_creator_sign.h"
 #include <memory>
 
 /* Global EID shared by multiple threads */
@@ -123,13 +121,6 @@ uint8_t* map_file(int fd, size_t *size)
     return (uint8_t*)mh;
 }
 
-// static int load_enclave(BinParser *parser, metadata_t *metadata)
-// {
-//     std::unique_ptr<CLoader> ploader(new CLoader(const_cast<uint8_t *>(parser->get_start_addr()), *parser));
-//     return ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
-// }
-
-
 int compute_measurement(const char *dllpath, const char *xmlpath) {
     bool res = false;
     size_t file_size = 0;
@@ -188,7 +179,6 @@ int compute_measurement(const char *dllpath, const char *xmlpath) {
     }
 
     // Parse enclave
-    // std::unique_ptr<BinParser> parser(binparser::get_parser(mh->base_addr, file_size));
     BinParser *parser = binparser::get_parser(mh->base_addr, file_size);
     assert(parser != NULL);
 
@@ -208,13 +198,13 @@ int compute_measurement(const char *dllpath, const char *xmlpath) {
         return -1;
     }
 
-    // CMetadata meta(metadata, parser.get());
     CMetadata meta(metadata, parser);
     if(meta.build_metadata(parameter) == false)
     {
         close_handle(fh);
         return false;
     }
+    size_t metadata_size = sizeof(*metadata);
 
     // TODO: dumptextrel check
 
@@ -230,34 +220,21 @@ int compute_measurement(const char *dllpath, const char *xmlpath) {
 
     std::vector<Section *> parser_sections = parser->get_sections();
     size_t section_count = parser_sections.size();
-    uint8_t *parser_section_raw[section_count];
-    for(size_t i = 0; i < section_count; i++) {
-        // printf("%lu ", parser_sections[i]->get_rva());
-        parser_section_raw[i] = reinterpret_cast<uint8_t*>(parser_sections[i]);
+
+    Section parser_section_data[section_count];
+    for (size_t i = 0; i < section_count; ++i) {
+        parser_section_data[i].m_start_addr = parser_sections[i]->m_start_addr;
+        parser_section_data[i].m_raw_data_size = parser_sections[i]->m_raw_data_size;
+        parser_section_data[i].m_virtual_size = parser_sections[i]->m_virtual_size;
+        parser_section_data[i].m_rva = parser_sections[i]->m_rva;
+        parser_section_data[i].m_si_flag = parser_sections[i]->m_si_flag;
+
     }
-    // printf("\n");
-    // printf("bitmap: ");
-    // for (auto &i: bitmap)
-    //     printf("%u\t", i);
-    // printf("\n");
-    // printf("start_addr: %p\n", parser_start_addr);
-    // printf("max size: %lu\n", parser_enclave_max_size);
-    // printf("sections:");
-    // for (auto &p: parser_sections)
-    //     printf("%p\t", p);
-    // printf("\n");
 
     int ecallret;
-    if (SGX_SUCCESS != ecall_load_enclave(global_eid, &ecallret, bitmap_raw, bitmap_size, parser_section_raw, section_count, parser_start_addr, parser_enclave_max_size, (uint8_t*)metadata) || ecallret != 1)
+    if (SGX_SUCCESS != ecall_load_enclave(global_eid, &ecallret, bitmap_raw, bitmap_size, parser_start_addr, parser_enclave_max_size, (uint8_t*)metadata, metadata_size, (uint8_t*)parser_section_data, section_count, sizeof(Section) * section_count) || ecallret != 1)
         printf("fail\n");
 
-    // Load enclave to get enclave hash
-    // int ret = load_enclave(parser, metadata);
-    // ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(enclave_hash, SGX_HASH_SIZE, &quota);
-
-    // for (int i = 0; i < SGX_HASH_SIZE; ++i)
-        // printf("%02x ", enclave_hash[i]);
-    // printf("\n");
     close_handle(fh);
     return 0;
 }

@@ -54,7 +54,7 @@ ifneq ($(HOST_OS), darwin)
 endif
 
 CXXFLAGS += -I$(SGX_SDK)/include		 \
-            -I$(INCLUDE_DIR)/internal    \
+            -I../../Include/internal    \
             -I.                          \
             -I..
 

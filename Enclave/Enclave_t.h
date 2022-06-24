@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-int ecall_load_enclave(uint8_t* parser_bitmap, size_t bitmap_size, uint8_t** parser_sections, size_t section_count, const uint8_t* parser_start_addr, uint64_t parser_enclave_max_size, uint8_t* metadata);
+int ecall_load_enclave(uint8_t* parser_bitmap, size_t bitmap_size, const uint8_t* parser_start_addr, uint64_t parser_enclave_max_size, uint8_t* metadata, size_t metadata_size, uint8_t* parser_section_data, size_t section_count, size_t section_data_size);
 
 sgx_status_t SGX_CDECL ocall_print_string(const char* str);
 sgx_status_t SGX_CDECL u_sgxssl_ftime(void* timeptr, uint32_t timeb_len);

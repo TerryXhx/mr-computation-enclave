@@ -34,6 +34,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+Section::Section()
+    :m_start_addr(NULL), m_raw_data_size(0), m_rva(0),
+     m_virtual_size(0), m_si_flag(0)
+{}
+
 Section::Section(const uint8_t* start_addr, uint64_t size, uint64_t virt_size,
                  uint64_t rva, si_flags_t sf)
     :m_start_addr(start_addr), m_raw_data_size(size), m_rva(rva),

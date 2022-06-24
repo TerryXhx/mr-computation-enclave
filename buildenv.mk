@@ -45,8 +45,7 @@ parent-dir = $(patsubst %/,%,$(dir $(1:%/=%)))
 my-dir = $(realpath $(call parent-dir,$(lastword $(MAKEFILE_LIST))))
 
 
-ROOT_DIR2              := $(call my-dir)
-ROOT_DIR := /home/nsec-sgx/SGXENV/linux-sgx
+ROOT_DIR              := $(call my-dir)
 ifneq ($(words $(subst :, ,$(ROOT_DIR))), 1)
   $(error main directory cannot contain spaces nor colons)
 endif

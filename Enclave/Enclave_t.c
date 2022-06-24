@@ -31,11 +31,13 @@ typedef struct ms_ecall_load_enclave_t {
 	int ms_retval;
 	uint8_t* ms_parser_bitmap;
 	size_t ms_bitmap_size;
-	uint8_t** ms_parser_sections;
-	size_t ms_section_count;
 	const uint8_t* ms_parser_start_addr;
 	uint64_t ms_parser_enclave_max_size;
 	uint8_t* ms_metadata;
+	size_t ms_metadata_size;
+	uint8_t* ms_parser_section_data;
+	size_t ms_section_count;
+	size_t ms_section_data_size;
 } ms_ecall_load_enclave_t;
 
 typedef struct ms_ocall_print_string_t {
@@ -120,15 +122,89 @@ static sgx_status_t SGX_CDECL sgx_ecall_load_enclave(void* pms)
 	ms_ecall_load_enclave_t* ms = SGX_CAST(ms_ecall_load_enclave_t*, pms);
 	sgx_status_t status = SGX_SUCCESS;
 	uint8_t* _tmp_parser_bitmap = ms->ms_parser_bitmap;
-	uint8_t** _tmp_parser_sections = ms->ms_parser_sections;
+	size_t _tmp_bitmap_size = ms->ms_bitmap_size;
+	size_t _len_parser_bitmap = _tmp_bitmap_size;
+	uint8_t* _in_parser_bitmap = NULL;
 	const uint8_t* _tmp_parser_start_addr = ms->ms_parser_start_addr;
 	uint8_t* _tmp_metadata = ms->ms_metadata;
+	size_t _tmp_metadata_size = ms->ms_metadata_size;
+	size_t _len_metadata = _tmp_metadata_size;
+	uint8_t* _in_metadata = NULL;
+	uint8_t* _tmp_parser_section_data = ms->ms_parser_section_data;
+	size_t _tmp_section_data_size = ms->ms_section_data_size;
+	size_t _len_parser_section_data = _tmp_section_data_size;
+	uint8_t* _in_parser_section_data = NULL;
 
+	CHECK_UNIQUE_POINTER(_tmp_parser_bitmap, _len_parser_bitmap);
+	CHECK_UNIQUE_POINTER(_tmp_metadata, _len_metadata);
+	CHECK_UNIQUE_POINTER(_tmp_parser_section_data, _len_parser_section_data);
 
+	//
+	// fence after pointer checks
+	//
+	sgx_lfence();
 
-	ms->ms_retval = ecall_load_enclave(_tmp_parser_bitmap, ms->ms_bitmap_size, _tmp_parser_sections, ms->ms_section_count, (const uint8_t*)_tmp_parser_start_addr, ms->ms_parser_enclave_max_size, _tmp_metadata);
+	if (_tmp_parser_bitmap != NULL && _len_parser_bitmap != 0) {
+		if ( _len_parser_bitmap % sizeof(*_tmp_parser_bitmap) != 0)
+		{
+			status = SGX_ERROR_INVALID_PARAMETER;
+			goto err;
+		}
+		_in_parser_bitmap = (uint8_t*)malloc(_len_parser_bitmap);
+		if (_in_parser_bitmap == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
 
+		if (memcpy_s(_in_parser_bitmap, _len_parser_bitmap, _tmp_parser_bitmap, _len_parser_bitmap)) {
+			status = SGX_ERROR_UNEXPECTED;
+			goto err;
+		}
 
+	}
+	if (_tmp_metadata != NULL && _len_metadata != 0) {
+		if ( _len_metadata % sizeof(*_tmp_metadata) != 0)
+		{
+			status = SGX_ERROR_INVALID_PARAMETER;
+			goto err;
+		}
+		_in_metadata = (uint8_t*)malloc(_len_metadata);
+		if (_in_metadata == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
+
+		if (memcpy_s(_in_metadata, _len_metadata, _tmp_metadata, _len_metadata)) {
+			status = SGX_ERROR_UNEXPECTED;
+			goto err;
+		}
+
+	}
+	if (_tmp_parser_section_data != NULL && _len_parser_section_data != 0) {
+		if ( _len_parser_section_data % sizeof(*_tmp_parser_section_data) != 0)
+		{
+			status = SGX_ERROR_INVALID_PARAMETER;
+			goto err;
+		}
+		_in_parser_section_data = (uint8_t*)malloc(_len_parser_section_data);
+		if (_in_parser_section_data == NULL) {
+			status = SGX_ERROR_OUT_OF_MEMORY;
+			goto err;
+		}
+
+		if (memcpy_s(_in_parser_section_data, _len_parser_section_data, _tmp_parser_section_data, _len_parser_section_data)) {
+			status = SGX_ERROR_UNEXPECTED;
+			goto err;
+		}
+
+	}
+
+	ms->ms_retval = ecall_load_enclave(_in_parser_bitmap, _tmp_bitmap_size, (const uint8_t*)_tmp_parser_start_addr, ms->ms_parser_enclave_max_size, _in_metadata, _tmp_metadata_size, _in_parser_section_data, ms->ms_section_count, _tmp_section_data_size);
+
+err:
+	if (_in_parser_bitmap) free(_in_parser_bitmap);
+	if (_in_metadata) free(_in_metadata);
+	if (_in_parser_section_data) free(_in_parser_section_data);
 	return status;
 }
 

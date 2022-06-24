@@ -70,7 +70,7 @@ int SGX_UBRIDGE(SGX_CDECL, pthread_create_ocall, (unsigned long long self));
 int SGX_UBRIDGE(SGX_CDECL, pthread_wakeup_ocall, (unsigned long long waiter));
 #endif
 
-sgx_status_t ecall_load_enclave(sgx_enclave_id_t eid, int* retval, uint8_t* parser_bitmap, size_t bitmap_size, uint8_t** parser_sections, size_t section_count, const uint8_t* parser_start_addr, uint64_t parser_enclave_max_size, uint8_t* metadata);
+sgx_status_t ecall_load_enclave(sgx_enclave_id_t eid, int* retval, uint8_t* parser_bitmap, size_t bitmap_size, const uint8_t* parser_start_addr, uint64_t parser_enclave_max_size, uint8_t* metadata, size_t metadata_size, uint8_t* parser_section_data, size_t section_count, size_t section_data_size);
 
 #ifdef __cplusplus
 }

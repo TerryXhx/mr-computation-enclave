@@ -30,13 +30,11 @@
  */
 
 
-// #include "se_wrapper.h"
 #include "se_error_internal.h"
 #include "arch.h"
 #include "util.h"
 #include "loader.h"
 #include "se_page_attr.h"
-// #include "enclave.h"
 #include "enclave_creator.h"
 #include "routine.h"
 #include "sgx_attributes.h"
@@ -51,7 +49,6 @@
 #include <algorithm>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-// #include <sys/mman.h>
 #include "sgx_enclave_common.h"
 #include "se_trace.h"
 
@@ -90,20 +87,15 @@ EnclaveCreator* get_enclave_creator(void)
 }
 
 CLoader::CLoader(
-    // uint8_t *mapped_file_base, 
-    // BinParser &parser,
     std::vector<uint8_t> reloc_bitmap,
     std::vector<Section *> parser_sections,
     const uint8_t *parser_start_addr,
     uint64_t parser_enclave_max_size
 )
-    // : m_mapped_file_base(mapped_file_base)
-    // , m_enclave_id(0)
     : m_start_addr(NULL)
     , m_elrange_start_address(0)
     , m_elrange_size(0)
     , m_metadata(NULL)
-    // , m_parser(parser)
     , m_reloc_bitmap(reloc_bitmap)
     , m_parser_sections(parser_sections)
     , m_parser_start_addr(parser_start_addr)
@@ -137,23 +129,11 @@ uint64_t CLoader::get_elrange_size() const
     return m_elrange_size;
 }
 
-// const std::vector<std::pair<tcs_t *, bool>>& CLoader::get_tcs_list() const
-// {
-//     return m_tcs_list;
-// }
 
 const secs_t& CLoader::get_secs() const
 {
     return m_secs;
 }
-
-// void* CLoader::get_symbol_address(const char * const symbol)
-// {
-//     uint64_t rva = m_parser.get_symbol_rva(symbol);
-//     if(0 == rva)
-//         return NULL;
-//     return GET_PTR(void, m_start_addr, rva);
-// }
 
 // is_relocation_page returns true if the specified RVA is a writable relocation page based on the bitmap.
 bool CLoader::is_relocation_page(const uint64_t rva, std::vector<uint8_t> *bitmap)
@@ -331,65 +311,6 @@ int CLoader::build_pages(const uint64_t start_rva, const uint64_t size, const vo
 
     return SGX_SUCCESS;
 }
-
-int CLoader::post_init_action(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
-{
-    int ret = SGX_SUCCESS;
-
-    for(layout_t *layout = layout_start; layout < layout_end; layout++)
-    {
-        if (!IS_GROUP_ID(layout->group.id) && (layout->entry.attributes & PAGE_ATTR_POST_REMOVE))
-        {
-            uint64_t start_addr = layout->entry.rva + delta + (uint64_t)get_start_addr();
-            uint64_t page_count = (uint64_t)layout->entry.page_count;
-            if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_range(start_addr, start_addr + (page_count << SE_PAGE_SHIFT))))
-                return ret;
-
-        }
-        else if (IS_GROUP_ID(layout->group.id))
-        {
-            uint64_t step = 0;
-            for(uint32_t j = 0; j < layout->group.load_times; j++)
-            {
-                step += layout->group.load_step;
-                if(SGX_SUCCESS != (ret = post_init_action(&layout[-layout->group.entry_count], layout, step)))
-                    return ret;
-            }
-        }
-    }
-    return SGX_SUCCESS;
-}
-  
-int CLoader::post_init_action_commit(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
-{
-    int ret = SGX_SUCCESS;
-
-    for(layout_t *layout = layout_start; layout < layout_end; layout++)
-    {
-        if (!IS_GROUP_ID(layout->group.id) && (layout->entry.attributes & PAGE_ATTR_POST_REMOVE))
-        {
-            uint64_t start_addr = layout->entry.rva + delta + (uint64_t)get_start_addr();
-            uint64_t page_count = (uint64_t)layout->entry.page_count;
-
-            for (uint64_t i = 0; i < page_count; i++)
-            {
-                if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_accept(start_addr + (i << SE_PAGE_SHIFT))))
-                    return ret;
-            }
-        }
-        else if (IS_GROUP_ID(layout->group.id))
-        {
-            uint64_t step = 0;
-            for(uint32_t j = 0; j < layout->group.load_times; j++)
-            {
-                step += layout->group.load_step;
-                if(SGX_SUCCESS != (ret = post_init_action_commit(&layout[-layout->group.entry_count], layout, step)))
-                    return ret;
-            }
-        }
-    }
-    return SGX_SUCCESS;
-}
       
 int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
 {
@@ -469,15 +390,6 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
         }
     }
 
-//     if(layout->attributes & PAGE_ATTR_POST_ADD)
-//     {
-// #ifndef SE_SIM
-//         if(layout->id == LAYOUT_ID_TCS_DYN)
-//         {
-//             m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), true));
-//         }
-// #endif
-//     }
     return SGX_SUCCESS;
 }
 int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
@@ -660,8 +572,6 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
     // the enclave image is already patched, and parser cannot read the information.
     // For linux, there's no map conflict. We assume load_enclave_ex will not do the retry.
     std::vector<uint8_t> bitmap = m_reloc_bitmap;
-    // if(!m_parser.get_reloc_bitmap(bitmap))
-        // return SGX_ERROR_INVALID_ENCLAVE;
 
     // patch enclave file
     patch_entry_t *patch_start = GET_PTR(patch_entry_t, m_metadata, m_metadata->dirs[DIR_PATCH].offset);
@@ -871,17 +781,6 @@ int CLoader::validate_metadata()
     return SGX_SUCCESS;
 }
 
-bool CLoader::is_ae(const enclave_css_t *enclave_css)
-{
-    assert(NULL != enclave_css);
-
-    if(INTEL_VENDOR_ID == enclave_css->header.module_vendor
-            && AE_PRODUCT_ID == enclave_css->body.isv_prod_id)
-        return true;
-
-    return false;
-}
-
 int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
 {
     int ret = SGX_SUCCESS;
@@ -954,118 +853,4 @@ int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *m
 int CLoader::destroy_enclave()
 {
     return get_enclave_creator()->destroy_enclave(ENCLAVE_ID_IOCTL, m_secs.size);
-}
-
-// int CLoader::set_memory_protection()
-// {
-//     int ret = 0;
-//     //set memory protection for segments
-//     if(m_parser.set_memory_protection((uint64_t)m_start_addr) != true)
-//     {
-//         return SGX_ERROR_UNEXPECTED;
-//     }
-
-//     if ((META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION) <= m_metadata->version) &&
-//             get_enclave_creator()->is_EDMM_supported(get_enclave_id()))
-//     {
-//         std::vector<std::tuple<uint64_t, uint64_t, uint32_t>> pages_to_protect;
-//         m_parser.get_pages_to_protect((uint64_t)m_start_addr, pages_to_protect);
-//         for (auto page : pages_to_protect)
-//         {   uint64_t start = 0, len = 0;
-//             uint32_t perm = 0;
-//             std::tie(start, len, perm) = page;
-//             ret = get_enclave_creator()->emodpr(start, len, (uint64_t)perm);
-//             if (ret != SGX_SUCCESS)
-//                 return SGX_ERROR_UNEXPECTED;
-//         }
-
-//         //On EDMM supported platform, force set <ReservedMemMinSize> rsrv memory region's attribute to RW although it's was set to RWX by <ReservedMemExecutable>1</ReservedMemExecutable>
-//         layout_t *layout_start = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset);
-//         layout_t *layout_end = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size);
-//         for (layout_t *layout = layout_start; layout < layout_end; layout++)
-//         {
-//             if (layout->entry.id ==  LAYOUT_ID_RSRV_MIN && layout->entry.si_flags == SI_FLAGS_RWX && layout->entry.page_count > 0)
-//             {
-//                 ret = get_enclave_creator()->emodpr((uint64_t)m_start_addr + layout->entry.rva, (uint64_t)layout->entry.page_count << SE_PAGE_SHIFT, (uint64_t)(SI_FLAG_R |SI_FLAG_W ));
-//                 if (ret != SGX_SUCCESS)
-//                     return SGX_ERROR_UNEXPECTED;
-//                 break;
-//             }
-//         }
-//     }
-
-//     //set memory protection for context
-//     ret = set_context_protection(GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset),
-//                                     GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size),
-//                                     0);
-//     if (SGX_SUCCESS != ret)
-//     {
-//         return ret;
-//     }
-    
-//     return SGX_SUCCESS;
-
-// }
-
-int CLoader::set_context_protection(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
-{
-    int ret = SGX_ERROR_UNEXPECTED;
-    for(layout_t *layout = layout_start; layout < layout_end; layout++)
-    {
-        if (!IS_GROUP_ID(layout->group.id))
-        {
-            if(!get_enclave_creator()->is_EDMM_supported(get_enclave_id()) && (layout->entry.id == LAYOUT_ID_RSRV_MIN ||layout->entry.id ==  LAYOUT_ID_RSRV_INIT))
-                 //Don't change the rsrv memory's attributes if platform isn't support EDMM
-                 continue;
-             //Here: URTS will change rsrv memory's attributes to RW forcely although it's signed by sign_tool as RWX (<ReservedMemExecutable>1</ReservedMemExecutable>).
-
-            int prot = 0 ;
-            if(layout->entry.si_flags == SI_FLAG_NONE)
-            {
-                prot = SI_FLAG_NONE & SI_MASK_MEM_ATTRIBUTE;
-            }
-            else
-            {
-                prot = SI_FLAGS_RW & SI_MASK_MEM_ATTRIBUTE;
-#ifndef SE_SIM
-
-                //when a page is eremoved when loading, we should set this page to none access. 
-                //if this page is accessed, a sigbus exception will be raised.
-                uint16_t attributes = layout->entry.attributes;
-                if(attributes & PAGE_ATTR_EADD && attributes & PAGE_ATTR_EREMOVE)
-                {
-                    if(attributes & PAGE_ATTR_EREMOVE)
-                    {
-                        prot = SI_FLAG_NONE & SI_MASK_MEM_ATTRIBUTE;
-                    }
-                }
-#endif                          
-            }
-
-            // ret = mprotect(GET_PTR(void, m_start_addr, layout->entry.rva + delta), 
-            //                    (size_t)layout->entry.page_count << SE_PAGE_SHIFT,
-            //                    prot); 
-            if(ret != 0)
-            {
-                SE_TRACE(SE_TRACE_WARNING, "mprotect(rva=%" PRIu64 ", len=%" PRIu64 ", flags=%d) failed\n",
-                         (uint64_t)m_start_addr + layout->entry.rva + delta, 
-                         (uint64_t)layout->entry.page_count << SE_PAGE_SHIFT, 
-                          prot);
-                return SGX_ERROR_UNEXPECTED;
-            }
-        }
-        else
-        {
-            uint64_t step = 0;
-            for(uint32_t j = 0; j < layout->group.load_times; j++)
-            {
-                step += layout->group.load_step;
-                if(SGX_SUCCESS != (ret = set_context_protection(&layout[-layout->group.entry_count], layout, step)))
-                {
-                    return ret;
-                }
-            }
-        }
-    }
-    return SGX_SUCCESS;
 }

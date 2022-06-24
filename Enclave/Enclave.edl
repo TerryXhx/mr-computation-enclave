@@ -40,22 +40,12 @@ enclave {
      *  [import]: specifies the functions to import, 
      *  [*]: implies to import all functions.
      */
-    
-    // from "Edger8rSyntax/Types.edl" import *;
-    // from "Edger8rSyntax/Pointers.edl" import *;
-    // from "Edger8rSyntax/Arrays.edl" import *;
-    // from "Edger8rSyntax/Functions.edl" import *;
-
-    // from "TrustedLibrary/Libc.edl" import *;
-    // from "TrustedLibrary/Libcxx.edl" import ecall_exception, ecall_map;
-    // from "TrustedLibrary/Thread.edl" import *;
 
     from "../sgxssl/Linux/package/include/sgx_tsgxssl.edl" import *;
     from "sgx_pthread.edl" import *;
 
     trusted {
-        // public int ecall_load_enclave([user_check]uint8_t* parser, [user_check]uint8_t *metadata, [user_check]int *i);
-        public int ecall_load_enclave([user_check]uint8_t *parser_bitmap, size_t bitmap_size, [user_check] uint8_t **parser_sections, size_t section_count, [user_check]const uint8_t *parser_start_addr, uint64_t parser_enclave_max_size, [user_check]uint8_t *metadata);
+        public int ecall_load_enclave([in, size=bitmap_size]uint8_t *parser_bitmap, size_t bitmap_size, [user_check]const uint8_t *parser_start_addr, uint64_t parser_enclave_max_size, [in, size=metadata_size]uint8_t *metadata, size_t metadata_size, [in, size=section_data_size]uint8_t *parser_section_data, size_t section_count, size_t section_data_size);
     };
     /* 
      * ocall_print_string - invokes OCALL to display string buffer inside the enclave.

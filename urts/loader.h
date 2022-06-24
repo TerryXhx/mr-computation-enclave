@@ -33,9 +33,7 @@
 #ifndef _LOADER_H_
 #define _LOADER_H_
 
-// #include "se_wrapper.h"
 #include "arch.h"
-// #include "enclave.h"
 #include "enclave_creator.h"
 #include "section_info.h"
 #include "launch_checker.h"
@@ -56,7 +54,6 @@ class Section;
 class CLoader: private Uncopyable
 {
 public:
-    // CLoader(uint8_t *mapped_file_base, BinParser &parser);
     CLoader(
         std::vector<uint8_t> reloc_bitmap, 
         std::vector<Section *> parser_sections,
@@ -72,9 +69,6 @@ public:
     uint64_t get_elrange_start_addr() const;
     uint64_t get_elrange_size() const;
     const secs_t& get_secs() const;
-    // const std::vector<std::pair<tcs_t *, bool>>& get_tcs_list() const;
-    // void* get_symbol_address(const char* const sym);
-    // int set_memory_protection();
     int post_init_action(layout_t *start, layout_t *end, uint64_t delta);
     int post_init_action_commit(layout_t *start, layout_t *end, uint64_t delta);
 
@@ -96,21 +90,16 @@ private:
     int validate_metadata();
     int get_debug_flag(const token_t * const launch);
     virtual int build_sections(std::vector<uint8_t> *bitmap);
-    int set_context_protection(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
     int set_elrange_config();
 
-    // uint8_t             *m_mapped_file_base;
     sgx_enclave_id_t    m_enclave_id;
     void                *m_start_addr;
     uint64_t            m_elrange_start_address;
     uint64_t            m_elrange_size;
 
-    // the TCS list
-    // std::vector<std::pair<tcs_t *, bool>> m_tcs_list;
     // the enclave creation parameters
     const metadata_t    *m_metadata;
     secs_t              m_secs;
-    // BinParser           &m_parser;
 
     std::vector<uint8_t> m_reloc_bitmap;
     std::vector<Section*> m_parser_sections;

@@ -37,9 +37,10 @@
 #include "uncopyable.h"
 #include <stdint.h>
 
-class Section : private Uncopyable
+class Section
 {
 public:
+    Section();
     Section(const uint8_t* start_addr, uint64_t size, uint64_t virt_size,
             uint64_t rva, si_flags_t sf);
     ~Section();
@@ -54,7 +55,7 @@ public:
 
     si_flags_t get_si_flags(void) const;
 
-private:
+// private:
     const uint8_t*  m_start_addr;
     uint64_t        m_raw_data_size;
     uint64_t        m_rva;
